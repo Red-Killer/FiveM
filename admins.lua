@@ -1,3 +1,3 @@
 RealAdmins = {
-    "steam:11000015854ba23",
+    "steam:1100001585a4ba23",
 }
