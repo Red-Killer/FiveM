@@ -1,6 +1,4 @@
 // DONT TOUCH THIS FILE IF YOU DONT KNOW WHAT YOU ARE DOING
-// THIS FILE IS FOR THE TXADMIN WEB INTERFACE
-var port = 2222;
 const path = require('path');
 const fs = require('fs');
 const WebSocket = require('ws');
